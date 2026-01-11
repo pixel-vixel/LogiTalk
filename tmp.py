@@ -49,33 +49,9 @@ class MainWindow(CTk):
         self.frame_chat.grid_rowconfigure(0, weight=1)
         self.frame_chat.grid_columnconfigure(0, weight=1)
 
-        self.chat_text = CTkTextbox(self.frame_chat, state="disabled", font=("Arial", 20))
+        self.chat_text = CTkScrollableFrame(self.frame_chat)
         self.chat_text.grid(row=0, column=0, columnspan=2,
                             sticky="nsew", padx=5, pady=5)
-        self.chat_text.tag_config(
-            "left",
-            foreground="white",
-            background="#2b6cb0",
-            justify="left",
-            lmargin1=10,
-            lmargin2=10,
-            rmargin=80,
-            spacing1=5,
-            spacing3=5
-        )
-
-        self.chat_text.tag_config(
-            "right",
-            foreground="white",
-            background="#16a34a",
-            justify="right",
-            lmargin1=80,
-            lmargin2=80,
-            rmargin=10,
-            spacing1=5,
-            spacing3=5
-        )
-
 
         self.message_input = CTkEntry(
             self.frame_chat,
@@ -85,6 +61,11 @@ class MainWindow(CTk):
         self.message_input.grid(row=1, column=0,
                                 sticky="ew", padx=5, pady=5)
 
+        self.img_btn = CTkButton(self.frame_chat, text="📂", width=50,
+                                height=40 )
+        self.img_btn.grid(row=1, column=1,
+                                sticky="ew", padx=5, pady=5)
+
         self.send_btn = CTkButton(
             self.frame_chat,
             text="▶️",
@@ -92,7 +73,7 @@ class MainWindow(CTk):
             height=40,
             command=self.send_message
         )
-        self.send_btn.grid(row=1, column=1, padx=5, pady=5)
+        self.send_btn.grid(row=1, column=2, padx=5, pady=5)
 
         self.username = "Sasha"
         try:
@@ -142,16 +123,23 @@ class MainWindow(CTk):
         else:
             set_appearance_mode('light')
 
-    def add_message(self, text, tag="left"):
-        self.chat_text.configure(state='normal')
-        self.chat_text.insert(END, f"{text} \n\n", tag)
-        self.chat_text.configure(state='disable')
+    def add_message(self, text, img=None):
+        message_frame = CTkFrame(self.chat_text, fg_color="grey")
+        message_frame.pack(pady=5, anchor="w")
+        wrap_size = self.winfo_width() - self.frame_menu.winfo_width() - 40
+
+        if not img:
+            CTkLabel(message_frame, text=text, wraplength=wrap_size, text_color="white",
+                    justify="left" ).pack(padx=10, pady=5)
+
+    def open_image(self):
+        pass
 
     def send_message(self):
         self.username = self.entry.get()
         message = self.message_input.get()
         if message:
-            self.add_message(message, "right")
+            self.add_message(message)
             data = f"TEXT@{self.username}@{message}\n"
             try:
                 self.sock.sendall(data.encode())
