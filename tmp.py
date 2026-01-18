@@ -1,6 +1,9 @@
 from customtkinter import *
 from socket import *
 import threading
+import io
+import base64
+from PIL import Image
 
 class MainWindow(CTk):
     def __init__(self):
@@ -62,7 +65,7 @@ class MainWindow(CTk):
                                 sticky="ew", padx=5, pady=5)
 
         self.img_btn = CTkButton(self.frame_chat, text="📂", width=50,
-                                height=40 )
+                                height=40, command=self.open_image )
         self.img_btn.grid(row=1, column=1,
                                 sticky="ew", padx=5, pady=5)
 
@@ -131,9 +134,10 @@ class MainWindow(CTk):
         if not img:
             CTkLabel(message_frame, text=text, wraplength=wrap_size, text_color="white",
                     justify="left" ).pack(padx=10, pady=5)
-
-    def open_image(self):
-        pass
+        else:
+            CTkLabel(message_frame, text=text, wraplength=wrap_size, 
+                     text_color="white", image=img, compound='top', 
+                     justify='left').pack(padx=10, pady=5)
 
     def send_message(self):
         self.username = self.entry.get()
@@ -177,8 +181,39 @@ class MainWindow(CTk):
                 message = parts[2]
                 self.add_message(f"{author}: {message}")
         elif msg_type == "IMAGE":
-            pass
+            if len(parts) >= 4:
+                author =  parts[1]
+                filename = parts[2]
+                b64_img = parts[3]
+                try:
+                    img_data = base64.b64decode(b64_img)
+                    pil_img = Image.open(io.BytesIO(img_data))
+                    ctk_img = CTkImage(pil_img, size=(300, 300))
+                    self.add_message(f"{author} send image: {filename}:", img=ctk_img)
+                except Exception as e:
+                    self.add_message(f"Помилка відображення зображення: {e}")
         else:
             self.add_message(line)
+
+    def open_image(self):
+        filename = filedialog.askopenfilename()
+        if not filename:
+            return
+        try:
+            with open(filename, "rb") as f:
+                raw = f.read()
+            b64_data = base64.b64encode(raw).decode()
+            shortname = os.path.basename(filename)
+            data = f"IMAGE@{self.username}@{shortname}@{b64_data}\n"
+            try:
+                self.sock.sendall(data.encode())
+            except:
+                pass
+            self.add_message("", CTkImage(light_image=Image.open(filename), 
+                                          size=(300, 300)))
+        except Exception as e:
+            self.add_message(f"Не вдалося відправити зображення: {e}")
+
+
 win = MainWindow()
 win.mainloop()
