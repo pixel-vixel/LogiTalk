@@ -11,13 +11,19 @@ class MainWindow(CTk):
         self.geometry("800x600")
         self.title("LogiTalk")
 
+        self.username = "Sasha"
+        self.is_show_menu = False
+        self.anim_speed = -20
+
         # === menu frame ===
         self.frame_menu = CTkFrame(self, width=300, corner_radius=0, fg_color="#153B50")
         self.frame_menu.pack_propagate(False)
         self.frame_menu.pack(side=LEFT, fill="y")
 
             # button to open/close menu
-        self.menu_btn = CTkButton(self.frame_menu, width=60, height=60, text="🟰")
+        self.menu_btn = CTkButton(self.frame_menu, 
+                                  width=60, height=60, text="🟰", 
+                                  command=self.toggle_show_menu)
         self.menu_btn.pack(padx=0)
 
             # avatar image label 
@@ -39,13 +45,16 @@ class MainWindow(CTk):
             # button for name
         self.username_btn = CTkButton(self.frame_menu, width=150, height=30, 
                                     fg_color="#429EA6", text="Підтвердити ім'я",
-                                    text_color="#DADFF7")
+                                    text_color="#DADFF7", command=self.save_name)
         self.username_btn.pack()
 
         # === chat frame ===
         self.frame_chat = CTkFrame(self, width=500, corner_radius=0)
         self.frame_chat.pack_propagate(False)
-        self.frame_chat.pack(side=RIGHT, fill='y')
+        self.frame_chat.pack(side=LEFT, fill='both', expand=True)
+
+        self.frame_chat.grid_rowconfigure(0, weight=1)
+        self.frame_chat.grid_columnconfigure(0, weight=1)
 
             # scroll frame for chat
         self.chat = CTkScrollableFrame(self.frame_chat)
@@ -69,6 +78,48 @@ class MainWindow(CTk):
         )
         self.send_btn.grid(row=1, column=2, padx=5, pady=5)
 
+    def toggle_show_menu(self):
+        self.is_show_menu = not self.is_show_menu
+        self.anim_speed *= -1
+        if self.is_show_menu:
+            self.show_menu()
+        else:
+            self.show_menu()
+
+    def show_menu(self):
+        self.frame_menu.configure(width=self.frame_menu.winfo_width() + self.anim_speed)
+        if not self.frame_menu.winfo_width() >= 300 and self.is_show_menu:
+            self.after(10, self.show_menu)
+
+            self.avatar.pack(pady=50)
+            self.avatar_btn.pack()
+            self.username_entry.pack(pady=20)
+            self.username_btn.pack()
+
+        elif self.frame_menu.winfo_width() >= 100 and not self.is_show_menu:
+            self.after(10, self.show_menu)
+
+            if self.avatar:
+                self.avatar.pack_forget()
+            if self.avatar_btn:
+                self.avatar_btn.pack_forget()
+            if self.username_btn:
+                self.username_btn.pack_forget()
+            if self.username_entry:
+                self.username_entry.pack_forget()
+
+    def save_name(self):
+        new_name = self.username_entry.get().strip()
+        if new_name:
+            self.username = new_name
+
+    def add_message(self, text, is_me=False, img=None):
+        message_frame = CTkFrame(self.chat, fg_color=("green" if is_me else "blue"))
+        message_frame.pack(pady=5, anchor=("w" if not is_me else "e"))
+        wrap_size = self.winfo_width() - self.frame_menu.winfo_width() - 60
+
+        CTkLabel(message_frame, text=text, wraplength=wrap_size, text_color="white",
+                justify="left" ).pack(padx=10, pady=5)
 
 win = MainWindow()
 win.mainloop()

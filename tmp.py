@@ -81,7 +81,7 @@ class MainWindow(CTk):
         self.username = "Sasha"
         try:
             self.sock = socket(AF_INET, SOCK_STREAM)
-            self.sock.connect(('192.168.1.24', 8080))
+            self.sock.connect(('192.168.1.14', 8080))
             hello = f"TEXT@{self.username}@[SYSTEM] {self.username} приєднався(лась) до чату \n"
             self.sock.send(hello.encode('utf-8'))
             threading.Thread(target=self.recv_message, daemon=True).start()
