@@ -74,9 +74,19 @@ class MainWindow(CTk):
             self.frame_chat,
             text="▶️",
             width=40,
-            height=40
+            height=40,
+            command=self.send_message
         )
         self.send_btn.grid(row=1, column=2, padx=5, pady=5)
+
+        try:
+            self.sock = socket(AF_INET, SOCK_STREAM)
+            self.sock.connect(('localhost', 8080))
+            hello = f"TEXT@{self.username}@ [SYSTEM] {self.username} приєднався(лась) до чату!\n"
+            self.sock.send(hello.encode('utf-8'))
+            threading.Thread(target=self.recv_message, daemon=True).start()
+        except Exception as e:
+            self.add_message(f"Не вдалось під'єднатись: {e}")
 
     def toggle_show_menu(self):
         self.is_show_menu = not self.is_show_menu
@@ -120,6 +130,44 @@ class MainWindow(CTk):
 
         CTkLabel(message_frame, text=text, wraplength=wrap_size, text_color="white",
                 justify="left" ).pack(padx=10, pady=5)
+
+    def send_message(self):
+        message = self.message.get()
+        if message:
+            self.add_message(f"{message}")
+            data = f"TEXT@{self.username}@{message}"
+            try:
+                self.sock.sendall(data.encode())
+            except:
+                pass
+        self.message.delete(0, END)
+
+    def recv_message(self):
+        buffer = ""
+        while True:
+            try:
+                chunk = self.sock.recv(4096)
+                if not chunk:
+                    break
+                buffer += chunk.decode('utf-8', errors='ignore')
+
+                while "\n" in buffer:
+                    line, buffer = buffer.split('\n', 1)
+                    self.handle_line(line.strip())
+            except:
+                break
+        self.sock.close()
+
+    def handle_line(self, line):
+        if not line:
+            return
+        parts = line.split("@", 3)
+        msg_type = parts[0]
+        if msg_type == "TEXT":
+            if len(parts) >= 3:
+                author = parts[1]
+                message = parts[2]
+                self.add_message(f"{author}: {message}")
 
 win = MainWindow()
 win.mainloop()
