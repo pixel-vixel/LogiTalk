@@ -5,6 +5,7 @@ import io
 import base64
 from PIL import Image
 
+# клас додатку
 class MainWindow(CTk):
     def __init__(self):
         super().__init__()
